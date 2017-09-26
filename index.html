@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Socket.IO chat</title>
+    <style>
+      @media screen and (max-width:420px){
+        #login_form{
+          width: 95%;
+          display: block;
+          margin: auto;
+        }
+        #messages{
+          height: 60vh;
+        }
+      }
+      @media screen and (min-width:420px){
+        .login_window{
+          width: 400px;
+        }
+        #messages{
+          height: 75vh;
+        }
+      }
+      .login_window{
+        display: block;
+        margin: auto;
+        width: 400px;
+        margin-top: 35vh;
+      }
+      .chat_window{
+        display: none;
+
+      }
+      #messages{
+        border: 1px solid black;
+        overflow-y: auto;
+        overflow-x: hidden;
+        word-wrap: break-word;
+        padding: 5px;
+      }
+      #chat_form_div{
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+      }
+
+
+    </style>
+
+    <meta name="viewport" content="width=device-width, height=device-height initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.16.0/jquery.validate.js"></script>
+    <script src="https://use.fontawesome.com/ed0dce6850.js"></script>
+
+  </head>
+  <body>
+<div class="container-fluid">
+  <div class="row">
+    <div class="login_window">
+      <h1 class="text-center">Chat.io</h1>
+      <form id="login_form" action="" class="form-group">
+        <label id="username_taken_text" style="color:red"></label>
+        <input id="username" type="text" class="form-control" placeholder="Enter a username..." required="true" maxlength="15">
+        <input type="submit" class="form-control btn btn-primary" value="Submit">
+      </form>
+    </div>
+
+
+
+    <div class="chat_window">
+      <div class="col-md-9 col-sm-9 col-lg-9 ">
+        <br><br>
+        <h4 id="chatting_with_text" style="display:none">Chatting with: </h4><h4 style="display:inline" id="chatting_with"></h4>
+        <ul class="list-group" id="messages">
+          <li id="typing"></li>
+        </ul>
+        <div class="chat_form_div">
+          <form action="" id="chat_form" class="form-group">
+            <div class="col-md-10 col-sm-10 col-lg-10" style="padding: 0px;">
+              <input id="m" autocomplete="off" class="form-control" required="true">
+            </div>
+            <div class="col-md-2 col-sm-2 col-lg-2" style="padding: 0px;">
+              <button id="send_btn" class="form-control btn btn-primary">Send</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-3 col-lg-3">
+        <br><br>
+        <h3 style="display:inline">Users online: </h3><h3 id="users_online_num" style="display:inline"></h3>
+        <ul id="user_list" class="list-group"></ul>
+      </div>
+    </div><!--chat_window-->
+  </div><!--row-->
+</div><!--container-fluid-->
+
+
+<div class="modal fade" id="private_message_request_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 id="private_chat_request_user" style="display:inline"></h4><h4 class="modal-title" id="myModalLabel" style="display:inline"> would like to chat with you in private.</h4>
+      </div>
+      <div class="modal-body">
+        <button id="private_chat_agree_btn" type="button" class="btn btn-success" style="display:inline">Agree</button>
+        <button data-dismiss="modal" type="button" class="btn btn-danger" style="display:inline">Decline</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+
+
+      $(function () {
+        var socket = io();
+        var timer = null;
+        var private_mode = false;
+        var private_chat_socket_id = 0;
+        var username_taken = false;
+        $('#myModal').modal({ show: false})
+
+        function private_msg(e){
+          username = e.data.username;
+          private_chat_socket_id = e.data.socket_id;
+          socket.emit("private_message_request", username, private_chat_socket_id);
+        };
+
+        $('#chat_form').submit(function(){
+          if (private_mode == true) {
+            $("#messages").append($("<li class='list-group-item'>").text("You: " + $("#m").val()));
+            $('#messages').scrollTop($('#messages')[0].scrollHeight);
+            socket.emit("private_message", $("#m").val(), private_chat_socket_id);
+            $("#m").val("");
+          }else if (private_mode == false){
+            $("#messages").append($("<li class='list-group-item'>").text("You: " + $("#m").val()));
+            $('#messages').scrollTop($('#messages')[0].scrollHeight);
+            socket.emit('message', $('#m').val());
+            $('#m').val('');
+          }
+          return false;
+        });
+
+        $("#login_form").submit(function(){
+          console.log("CHECKING USERNAME");
+          socket.emit("check_username", $("#username").val());
+          return false;
+        });
+
+        socket.on("username_ok", function(){
+          $(".chat_window").css("display", "block");
+          $(".login_window").css("display", "none");
+          socket.emit("login", $("#username").val());
+          return false;
+        });
+
+        socket.on("username_taken", function(){
+          $("#username_taken_text").text("Username already taken!");
+        });
+
+        $("#m").on("input", function(){
+          if (private_mode == true) {
+            socket.emit("typing_private", private_chat_socket_id);
+          }else if(private_mode == false){
+            socket.emit("typing");
+          }
+        });
+
+        function delTypetext(){
+          $("#typing").hide();
+        }
+
+        socket.on("private_message_request", function(username, socket_id){
+          $("#private_message_request_modal").modal("show");
+          $("#private_chat_request_user").text(username);
+          $("#private_chat_agree_btn").click(function(){
+            $("#private_message_request_modal").modal("hide");
+            socket.emit("private_message_agreement", socket_id);
+            private_mode = true;
+            $(".col-md-3").hide();
+            $("#chatting_with_text").css("display", "inline");
+            $("#chatting_with").append(username);
+            private_chat_socket_id = socket_id;
+          });
+        });
+
+        socket.on("private_start", function(username, socket_id){
+          private_mode = true;
+          $(".col-md-3").hide();
+          $("#chatting_with_text").css("display", "inline");
+          $("#chatting_with").append(username);
+        });
+
+        socket.on("typing", function(text){
+          $("#typing").show();
+          $("#messages").append($("#typing").html($("<li class='list-group-item'>").text(text)));
+          clearTimeout(timer);
+          timer = setTimeout(delTypetext, 1500);
+        });
+
+        socket.on("typing_private", function(text, socket_id){
+          if(private_chat_socket_id == socket_id){
+            $("#typing").show();
+            $("#messages").append($("#typing").html($("<li class='list-group-item'>").text(text)));
+            clearTimeout(timer);
+            timer = setTimeout(delTypetext, 1500);
+          }
+        });
+
+        socket.on('message', function(msg){
+          if(private_mode == false){
+            $("#typing").hide();
+            $("#messages").append($("<li class='list-group-item'>").text(msg));
+            $('#messages').scrollTop($('#messages')[0].scrollHeight);
+          }
+        });
+
+        socket.on('private_message', function(msg){
+          $("#typing").hide();
+          $("#messages").append($("<li class='list-group-item'>").text(msg));
+          $('#messages').scrollTop($('#messages')[0].scrollHeight);
+        });
+
+
+
+        socket.on("users_online", function(list){
+          $("#users_online_num").text(list.length);
+          var user = list[list.length-1];
+          $("#user_list").append($("<li class='list-group-item users_online_list' id=" + user.socket_id + ">" + user.username + "</li>")
+          .append($("<button>").click({username: user.username, socket_id: user.socket_id}, private_msg).css("float", "right").addClass("btn btn-primary btn-xs").text("Private")));
+        });
+
+
+
+        socket.on("user_left", function(list,user){
+          $("#users_online_num").text(list.length);
+          if (user != undefined) {
+            $("#" + user.socket_id).remove();
+          }
+        });
+
+        socket.on("get_all_users", function(list){
+          $("#users_online_num").text(list.length);
+          for (var i = 0; i < list.length; i++) {
+            $("#user_list").append($("<li class='list-group-item users_online_list' id=" + list[i].socket_id + ">" + list[i].username + "</li>")
+            .append($("<button>").click({username: list[i].username, socket_id: list[i].socket_id}, private_msg).css("float", "right").addClass("btn btn-primary btn-xs").text("Private")));
+          }
+        });
+
+
+      });
+    </script>
+
+  </body>
+</html>
