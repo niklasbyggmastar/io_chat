@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Socket.IO chat</title>
+    <title>Chat.io</title>
     <style>
       @media screen and (max-width:420px){
         #login_form{
@@ -55,6 +55,7 @@
     <!-- Optional theme -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
     <!-- Latest compiled and minified JavaScript -->
+    <link rel="icon" type="image/png" href="img/favicon.png">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.16.0/jquery.validate.js"></script>
     <script src="https://use.fontawesome.com/ed0dce6850.js"></script>
@@ -71,8 +72,6 @@
         <input type="submit" class="form-control btn btn-primary" value="Submit">
       </form>
     </div>
-
-
 
     <div class="chat_window">
       <div class="col-md-9 col-sm-9 col-lg-9 ">
@@ -101,7 +100,6 @@
   </div><!--row-->
 </div><!--container-fluid-->
 
-
 <div class="modal fade" id="private_message_request_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -117,13 +115,8 @@
   </div>
 </div>
 
-
-
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
-
-
 
       $(function () {
         var socket = io();
@@ -155,7 +148,6 @@
         });
 
         $("#login_form").submit(function(){
-          console.log("CHECKING USERNAME");
           socket.emit("check_username", $("#username").val());
           return false;
         });
@@ -259,7 +251,6 @@
             .append($("<button>").click({username: list[i].username, socket_id: list[i].socket_id}, private_msg).css("float", "right").addClass("btn btn-primary btn-xs").text("Private")));
           }
         });
-
 
       });
     </script>

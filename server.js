@@ -90,5 +90,5 @@ io.on('connection', function(socket){
 });
 
 http.listen(port, function(){
-  console.log('listening on *:8000');
+  console.log('server running...');
 });
